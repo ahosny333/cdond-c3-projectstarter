@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  slack: circleci/slack@4.4.4
 
 commands:
   destroy-environment:
@@ -79,6 +81,7 @@ jobs:
               cd frontend
               npm install
               npm run test
+      - slack/status
                 
   test-backend:
     docker:
