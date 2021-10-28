@@ -14,15 +14,15 @@ commands:
           when: on_fail
           command: |
             # delete backend stack
-            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.id >>
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Destroy created frontend
           when: on_fail
           command: |
             # delete created s3 bucket
-            aws s3 rm s3://udapeople-<< parameters.id >> --recursive
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
             # delete frontend stack
-            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.id >>
+            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
 
 
   revert-migrations:
@@ -174,9 +174,9 @@ jobs:
           paths:
             - inventory.txt
 
-      - destroy-environment
-          id: "${CIRCLE_WORKFLOW_ID:0:7}"
-      # Here's where you will add some code to rollback on failure      
+      - destroy-environment:
+        id : << pipeline.id >>
+    
 
 #   configure-infrastructure:
 #     docker:
