@@ -175,7 +175,7 @@ jobs:
             - inventory.txt
 
       - destroy-environment:
-        id : << pipeline.id >>
+          id : << pipeline.id >>
     
 
 #   configure-infrastructure:
