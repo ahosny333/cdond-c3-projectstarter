@@ -14,8 +14,8 @@
 - name: "extract backend folder"
   shell: |
     cd /home/ubuntu/uda_app
-    tar -xvf artifact.tar.gz
-    rm -r artifact.tar.gz
+    tar -xf artifact.tar.gz
+
 
 - name: "delete anything that might already be running"
   become: true
