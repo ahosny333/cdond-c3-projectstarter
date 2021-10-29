@@ -2,6 +2,7 @@
 - name: "create directory"
   shell: |
     cd /home/ubuntu/
+    rm -rf uda_app
     mkdir uda_app
 
 - name: "copy backend binaries"
@@ -15,6 +16,7 @@
   shell: |
     cd /home/ubuntu/uda_app
     tar -xf artifact.tar.gz
+    rm -rf artifact.tar.gz
 
 
 - name: "delete anything that might already be running"
@@ -33,3 +35,14 @@
   shell : |
     cd /home/ubuntu/uda_app
     pm2 start npm -- start
+
+  environment:
+    - TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION')}}"  
+    - TYPEORM_ENTITIES: "{{ lookup('env', 'TYPEORM_ENTITIES')}}"
+    - TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST')}}"
+    - TYPEORM_PORT: 5432
+    - TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME')}}"
+    - TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD')}}"
+    - TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE')}}"
+    - TYPEORM_MIGRATIONS: "{{ lookup('env', 'TYPEORM_MIGRATIONS')}}"
+    - TYPEORM_MIGRATIONS_DIR: "{{ lookup('env', 'TYPEORM_MIGRATIONS_DIR')}}"
