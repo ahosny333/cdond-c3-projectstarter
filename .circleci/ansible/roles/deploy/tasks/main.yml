@@ -9,7 +9,7 @@
   copy:
     src: ../../artifact.tar.gz
     dest: /home/ubuntu/uda_app
-    recursive: true
+    
 
 - name: "extract backend folder"
   shell: |
