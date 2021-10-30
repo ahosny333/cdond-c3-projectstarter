@@ -1,51 +1,36 @@
 ---
-- name: "create directory"
-  shell: |
-    cd /home/ubuntu/
-    mkdir uda_app
+- name: "install dependencies."
+  become: true
+  apt:
+    name: "tar"
+    state: latest
+    update_cache: yes
 
 - name: "copy backend binaries"
   become: yes
   copy:
-    src: ../../artifact.tar.gz
-    dest: /home/ubuntu/uda_app
+    src:  /root/project/artifact.tar.gz
+    dest: /home/ubuntu/
     
 
-- name: "extract backend folder"
+- name: "Untar backend folder"
+  become: true
   shell: |
-    cd /home/ubuntu/uda_app
-    tar -xf artifact.tar.gz
+    cd /home/ubuntu/
+    tar -xzvf artifact.tar.gz
 
-- name: "delete anything that might already be running"
+- name: Install Node modules
   become: true
-  command: pm2 delete all
-  ignore_errors: true
-
-# - name: "start server"
-#   become: true
-#   command: pm2 start -f ./main.js
-#   args:
-#     chdir: /home/ubuntu/uda_app/dist
-
-# - name: "start server"
-#   become: true
-#   shell : |
-#     cd /home/ubuntu/uda_app
-#     pm2 start npm -- start
-
-- name: "start server"
+  shell: |
+    cd /home/ubuntu/backend
+    npm i
+- name: Building backend
   become: true
-  command: pm2 start -f ./main.js
-  args:
-    chdir: /home/ubuntu/uda_app/dist
-  environment:
-    ENVIRONMENT: production
-    TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION') }}"
-    TYPEORM_MIGRATIONS_DIR: "./migrations"
-    TYPEORM_MIGRATIONS: "./migrations/*.js"
-    TYPEORM_ENTITIES: "./modules/domain/**/*.entity.js"
-    TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
-    TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
-    TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
-    TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
-    TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
+  shell: |
+    cd /home/ubuntu/backend
+    npm run build
+- name: Start pm2 service
+  become: true
+  shell: |
+    cd /home/ubuntu/backend
+    pm2 start npm --name backend -- start
