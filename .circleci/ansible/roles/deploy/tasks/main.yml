@@ -2,7 +2,6 @@
 - name: "create directory"
   shell: |
     cd /home/ubuntu/
-    rm -rf uda_app
     mkdir uda_app
 
 - name: "copy backend binaries"
@@ -16,8 +15,6 @@
   shell: |
     cd /home/ubuntu/uda_app
     tar -xf artifact.tar.gz
-    rm -rf artifact.tar.gz
-
 
 - name: "delete anything that might already be running"
   become: true
