@@ -19,8 +19,9 @@ commands:
           name: Destroy created frontend
           when: on_fail
           command: |
-            # delete created s3 bucket
-            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            # delete created s3 
+            
+            aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --force
             # delete frontend stack
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
 
@@ -32,17 +33,21 @@ commands:
     steps:
       - run:
           name: Revert migrations
-          # Add when this will run
+          when: on_fail
           command: |
-            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = 1
+            SUCCESS=$(curl -H "token: 4a49bb2d-c573-43af-adb2-b5d89cda5a67" --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( $SUCCESS==1 )); 
             then
-            #  cd ~/project/backend
-            #  npm install
-            #  Add revert code here. You can find this in the Getting Started section.
-              exit 1
+              cd ~/project/backend
+              npm install
+              npm run migrations:revert
+              echo "revert migration done"
             fi
+      - run:
+          when: on_fail
+          name: Prevents the workflow from continuing
+          command: |
+            circleci-agent step halt
             
 jobs:
   build-frontend:
@@ -79,6 +84,9 @@ jobs:
           root: .
           paths:
             - backend/dist
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-build
 
   test-frontend:
     docker:
@@ -105,6 +113,8 @@ jobs:
     steps:
       - checkout
       # Restore from cache
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Back-end test
           command: |
@@ -129,6 +139,8 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: back-end analysize
           command: |
@@ -213,6 +225,8 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build]
       - run:
           name: Install aws dependencies
           command: |
@@ -232,12 +246,15 @@ jobs:
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
               echo "DB migration was successful, will update memstash..."
-              curl -H "Content-Type: text/plain" -H "token: 4a49bb2d-c573-43af-adb2-b5d89cda5a67" --request PUT --data "success" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
+              curl -H "Content-Type: text/plain" -H "token: 4a49bb2d-c573-43af-adb2-b5d89cda5a67" --request PUT --data "1" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
             else
               echo "DB migration failed, please verify setup! Probably the database already exists. Verify setup!"
-              curl -H "Content-Type: text/plain" -H "token: 4a49bb2d-c573-43af-adb2-b5d89cda5a67" --request PUT --data "fail" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
+              curl -H "Content-Type: text/plain" -H "token: 4a49bb2d-c573-43af-adb2-b5d89cda5a67" --request PUT --data "0" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
             fi
             echo "WorkflowID=${CIRCLE_WORKFLOW_ID:0:7}"
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-build
       # Here's where you will add some code to rollback on failure      
       - destroy-environment:
           id : << pipeline.id >> 
@@ -331,7 +348,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update curl
+            apk add --update curl nodejs npm
             pip install awscli
       - run:
           name: Get backend url
@@ -362,6 +379,8 @@ jobs:
               return 1
             fi
       # Here's where you will add some code to rollback on failure  
+      - revert-migrations
+      - destroy-environment
 
 #   cloudfront-update:
 #     docker:
