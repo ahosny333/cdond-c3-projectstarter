@@ -351,14 +351,11 @@ jobs:
             apk add --update curl nodejs npm
             pip install awscli
       - run:
-          name: Get backend url
+          name: backend smoke test
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
-      - run:
-          name: Backend smoke test.
-          command: |
             echo ${BACKEND_IP}
-            export ENDPOINT_URL="http://$BACKEND_IP:3030/api/status"
+            export ENDPOINT_URL="http://${BACKEND_IP}:3030/api/status"
             echo $ENDPOINT_URL
             if curl ${ENDPOINT_URL} | grep "ok"
             then
@@ -383,20 +380,24 @@ jobs:
           id : << pipeline.id >>
       - revert-migrations
 
-#   cloudfront-update:
-#     docker:
-#       # Docker image here that supports AWS CLI
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Update cloudfront distribution
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  cloudfront-update:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum -y install tar gzip
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/cloudfront.yml \
+            --stack-name cloudfront-stack \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --tags project=udapeople
+      # Here's where you will add some code to rollback on failure  
 
 # cleanup:
 #     docker:
