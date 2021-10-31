@@ -379,9 +379,9 @@ jobs:
               return 1
             fi
       # Here's where you will add some code to rollback on failure  
-      - revert-migrations
       - destroy-environment:
           id : << pipeline.id >>
+      - revert-migrations
 
 #   cloudfront-update:
 #     docker:
